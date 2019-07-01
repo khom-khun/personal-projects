@@ -6,6 +6,7 @@
 #include "Geom.hpp"
 #include "Shader.hpp"
 #include "Camera.hpp"
+#include "CSceneNodeAnimatorCameraFPS.h"
 
 using namespace irr;
 
@@ -48,19 +49,16 @@ int main(){
 
 
 	scene::ICameraSceneNode *cam = app.device->getSceneManager()->addCameraSceneNode();
-	
-	kosu::DefaultCamera *anim = new kosu::DefaultCamera;
+	scene::ISceneNodeAnimator *anim = new kosu::DefaultCamera;//scene::CSceneNodeAnimatorCameraFPS(app.device->getCursorControl(), 10, 0.01);
+	cam->bindTargetAndRotation(true);
 	cam->addAnimator(anim);
 	anim->drop();
-	
 
 	cam->setPosition({0,0,-1});
 	cam->setTarget({0,0,0});
 	cam->setNearValue(0.01f);
 	cam->setFarValue(10.0f);
-	
 	app.device->getSceneManager()->setActiveCamera(cam);
-
 
 	
 

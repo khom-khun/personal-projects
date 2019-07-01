@@ -11,9 +11,10 @@ EventReader::EventReader() : quit(false){
 bool EventReader::OnEvent(const SEvent& e){
 	switch(e.EventType){
 	case irr::EET_KEY_INPUT_EVENT:
-		if(e.KeyInput.Key == KEY_KEY_Q)
+		if(e.KeyInput.Key == KEY_KEY_Q){
 			quit = true;
 			return true;
+		}
 		break;
 	}
 	return false;

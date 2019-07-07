@@ -18,10 +18,10 @@ namespace kosu{
 		core::vector3df_SIMD tL = core::vector3df_SIMD(-0.5, 0.5, 0.0), core::vector3df_SIMD bR = core::vector3df_SIMD(0.5, -0.5, 0.0)
 		){
 		DefaultLayout vD[4];
-		vD[0] = DefaultLayout{ {tL.x, tL.y, tL.z}, {0,0,0} };
-		vD[1] = DefaultLayout{ {bR.x, tL.y, tL.z}, {0,0,0} };
-		vD[2] = DefaultLayout{ {bR.x, bR.y, bR.z}, {0,0,0} };
-		vD[3] = DefaultLayout{ {tL.x, bR.y, bR.z}, {0,0,0} };
+		vD[0] = DefaultLayout{ {tL.x, tL.y, tL.z}, {255,0,0} };
+		vD[1] = DefaultLayout{ {bR.x, tL.y, tL.z}, {0,255,0} };
+		vD[2] = DefaultLayout{ {bR.x, bR.y, bR.z}, {0,0,255} };
+		vD[3] = DefaultLayout{ {tL.x, bR.y, bR.z}, {0,255,255} };
 
 		uint16_t iD[] = {
 			0,1,2,	0,2,3

@@ -1,7 +1,7 @@
 #define _IRR_STATIC_LIB_
 #include <irrlicht.h>
 #include "../source/Irrlicht/COpenGLExtensionHandler.h"
-
+#include "../source/Irrlicht/COpenGLBuffer.h"
 #include "Application.hpp"
 #include "Geom.hpp"
 #include "Shader.hpp"
@@ -40,6 +40,8 @@ void main(){
 
 )";
 
+
+
 int main(){
 	
 	kosu::Application app;
@@ -47,10 +49,8 @@ int main(){
 	if (app.device == 0)
 		return 1; 
 
-
 	scene::ICameraSceneNode *cam = app.device->getSceneManager()->addCameraSceneNode();
-	scene::ISceneNodeAnimator *anim = new kosu::DefaultCamera;//scene::CSceneNodeAnimatorCameraFPS(app.device->getCursorControl(), 10, 0.01);
-	cam->bindTargetAndRotation(true);
+	scene::ISceneNodeAnimator *anim = new kosu::DefaultCamera;
 	cam->addAnimator(anim);
 	anim->drop();
 

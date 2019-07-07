@@ -17,12 +17,19 @@ namespace kosu{
 
 		virtual ISceneNodeAnimator* createClone(scene::IDummyTransformationSceneNode* node, scene::ISceneManager* newManager = 0) override;
 
-	protected:
-		core::vector<SKeyMap> keyMap_;
+		virtual bool isEventReceiverEnabled() const override{
+			return true;
+		}
 
+	protected:
 		float moveSpeed_;
 		float rotateSpeed_;
 
+
+		float lastFrameStep_;
+		int32_t lastTime_;
+
+		core::vector2df look_;
 		core::vector2df move_;
 
 	};

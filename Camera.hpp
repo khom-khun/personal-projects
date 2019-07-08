@@ -20,18 +20,25 @@ namespace kosu{
 		virtual bool isEventReceiverEnabled() const override{
 			return true;
 		}
-
+		
 	protected:
+		enum CAMERA_CONTROLS {
+			MOVE_FORWARD = 0,
+			MOVE_BACK,
+			MOVE_LEFT,
+			MOVE_RIGHT,
+
+			TURN_LEFT,
+			TURN_RIGHT,
+
+			CAMERA_CONTROL_SIZE
+		};
+		bool keyMap_[CAMERA_CONTROL_SIZE];
+
+
 		float moveSpeed_;
 		float rotateSpeed_;
-
-
-		float lastFrameStep_;
 		int32_t lastTime_;
-
-		core::vector2df look_;
-		core::vector2df move_;
-
 	};
 
 

@@ -45,11 +45,14 @@ Application::~Application(){
 }
 
 void Application::run(){
-	
+	std::wostringstream str;
+	str << L"GPU Mesh Demo - Irrlicht Engine [" << driver->getName() << "]";
+
+	device->setWindowCaption(str.str().c_str());
 
 	while(!e.quit && device->run()){
 		if(!device->isWindowActive()) continue;
-		std::chrono::duration<double, std::ratio<1>> time = device->getTimer()->getTime();
+		std::chrono::duration<float, std::ratio<1>> time = device->getTimer()->getTime();
 
 
 
@@ -59,13 +62,6 @@ void Application::run(){
 
 		if(onDraw) onDraw(driver);
 		driver->endScene();
-		if(time.count() > 0.5){
-			std::wostringstream str;
-			str << L"GPU Mesh Demo - Irrlicht Engine [" << driver->getName() << "] FPS:" << (time.count() * 60);
-
-			device->setWindowCaption(str.str().c_str());
-			device->getTimer()->setTime(std::chrono::seconds(0));
-		}
 	}
 }
 

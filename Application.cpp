@@ -54,12 +54,9 @@ void Application::run(){
 		if(!device->isWindowActive()) continue;
 		std::chrono::duration<float, std::ratio<1>> time = device->getTimer()->getTime();
 
-
-
 		driver->beginScene(true, true, video::SColor(255, 255, 0, 255)); 
 		device->getSceneManager()->drawAll();
-	
-
+		
 		if(onDraw) onDraw(driver);
 		driver->endScene();
 	}

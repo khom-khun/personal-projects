@@ -14,15 +14,15 @@ using namespace irr;
 const char *vS = R"(
 #version 430 core
 layout(location = 0) in vec4 pos;
-layout(location = 1) in vec4 color;   
+layout(location = 1) in vec2 texCoord;   
 
 uniform mat4 mvp;
 
-out vec4 vColor;   
+out vec2 tCoord;
         
 void main(){
     gl_Position = mvp * pos;
-    vColor = color;
+    tCoord = texCoord;
 }
 
 )";
@@ -30,17 +30,49 @@ void main(){
 const char* fS = R"(
 #version 430 core
 
-in vec4 vColor;
+in vec2 tCoord;
 
 layout(location = 0) out vec4 color;
 
+layout(binding = 0) uniform sampler2D tex0;
+
 void main(){
-    color = vColor;
+    color = texture(tex0, tCoord);
 }
 
 )";
 
+const char* vST = R"(
+#version 430 core
+layout(location = 0) in vec4 pos;
 
+layout(binding = 0) uniform samplerBuffer tex0;
+
+flat out int vID;
+
+uniform mat4 mvp;
+void main(){
+	vID = int(pos.w);
+	vec4 data = texelFetch(tex0, gl_VertexID);
+
+    gl_Position = mvp * (vec4(pos.xyz, 1.0) + vec4(0, data.x * 2, 0, 0));
+}
+
+)";
+
+const char* fST = R"(
+#version 430 core
+layout(location = 0) out vec4 color;
+flat in int vID;
+
+void main(){
+	if(vID == 0)
+	color = vec4(0.0, 0.0, 0.0, 1.0);
+	else
+	color = vec4(1.0, 1.0, 1.0, 1.0);
+}
+
+)";
 
 int main(){
 	
@@ -54,31 +86,57 @@ int main(){
 	cam->addAnimator(anim);
 	anim->drop();
 
-	cam->setPosition({0,0,-1});
-	cam->setTarget({0,0,0});
+	cam->setPosition({0,2,-1});
+	cam->setTarget({0,2,0});
 	cam->setNearValue(0.01f);
-	cam->setFarValue(10.0f);
+	cam->setFarValue(10000.0f);
 	app.device->getSceneManager()->setActiveCamera(cam);
 
+	asset::IAssetLoader::SAssetLoadParams lparams;
+	asset::ICPUTexture* cpuTex = static_cast<asset::ICPUTexture*>(app.device->getAssetManager().getAsset("../../media/wall.jpg", lparams));
+	video::ITexture* tex = app.driver->getGPUObjectsFromAssets(&cpuTex, (&cpuTex) + 1).front();
 	
 
-	video::IGPUMeshBuffer *mesh = kosu::quad(app.driver);
+	std::pair<video::IGPUMeshBuffer*, video::ITextureBufferObject*> terrain =  kosu::terrain(app.driver, static_cast<asset::ICPUTexture*>(app.device->getAssetManager().getAsset("../../media/heightmap.jpg", lparams)));
+
+	video::IGPUMeshBuffer *mesh = kosu::quad(app.driver, core::vector3df_SIMD(-0.5, 1, 0), core::vector3df_SIMD(0.5, 0, 0));
 
 
 	video::SGPUMaterial mat;
 	
+	{
 	kosu::ShaderCallback *cb = new kosu::ShaderCallback;
 
 	mat.BackfaceCulling = false;
 	mat.MaterialType = (video::E_MATERIAL_TYPE)app.driver->getGPUProgrammingServices()
 		->addHighLevelShaderMaterial(vS, nullptr, nullptr, nullptr, fS, 3, video::EMT_SOLID, cb);
 	cb->drop();
+	
+	mat.setTexture(0, tex);
+	}
+
+	video::SGPUMaterial mat2;
+
+	{
+	kosu::ShaderCallback* cb = new kosu::ShaderCallback;
+	
+	mat2.BackfaceCulling = false;
+	mat2.MaterialType = (video::E_MATERIAL_TYPE)app.driver->getGPUProgrammingServices()
+		->addHighLevelShaderMaterial(vST, nullptr, nullptr, nullptr, fST, 3, video::EMT_SOLID, cb);
+	cb->drop();
+	
+	mat2.setTexture(0, terrain.second);
+	}
 
 
 	app.hookDraw([&](video::IVideoDriver *driver) {
 		driver->setTransform(video::E4X3TS_WORLD, core::matrix4x3());
 		driver->setMaterial(mat);
 		driver->drawMeshBuffer(mesh);
+
+		driver->setMaterial(mat2);
+		driver->drawMeshBuffer(terrain.first);
+
 	});
 	app.run();
 

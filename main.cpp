@@ -48,14 +48,14 @@ layout(location = 0) in vec4 pos;
 
 layout(binding = 0) uniform samplerBuffer tex0;
 
-flat out int vID;
+out float clr;
 
 uniform mat4 mvp;
 void main(){
-	vID = int(pos.w);
-	vec4 data = texelFetch(tex0, gl_VertexID);
+	vec4 data = texelFetch(tex0, int(pos.w));
+	clr = data.x;
 
-    gl_Position = mvp * (vec4(pos.xyz, 1.0) + vec4(0, data.x * 2, 0, 0));
+    gl_Position = mvp * (vec4(pos.xyz, 1.0) + vec4(0, data.x * 3, 0, 0));
 }
 
 )";
@@ -63,13 +63,10 @@ void main(){
 const char* fST = R"(
 #version 430 core
 layout(location = 0) out vec4 color;
-flat in int vID;
+in float clr;
 
 void main(){
-	if(vID == 0)
-	color = vec4(0.0, 0.0, 0.0, 1.0);
-	else
-	color = vec4(1.0, 1.0, 1.0, 1.0);
+	color = vec4(clr,clr,clr,1.0);
 }
 
 )";
@@ -86,8 +83,8 @@ int main(){
 	cam->addAnimator(anim);
 	anim->drop();
 
-	cam->setPosition({0,2,-1});
-	cam->setTarget({0,2,0});
+	cam->setPosition({0,10,-1});
+	cam->setTarget({0,5,0});
 	cam->setNearValue(0.01f);
 	cam->setFarValue(10000.0f);
 	app.device->getSceneManager()->setActiveCamera(cam);
@@ -119,7 +116,7 @@ int main(){
 
 	{
 	kosu::ShaderCallback* cb = new kosu::ShaderCallback;
-	
+	//mat2.Wireframe = true;
 	mat2.BackfaceCulling = false;
 	mat2.MaterialType = (video::E_MATERIAL_TYPE)app.driver->getGPUProgrammingServices()
 		->addHighLevelShaderMaterial(vST, nullptr, nullptr, nullptr, fST, 3, video::EMT_SOLID, cb);

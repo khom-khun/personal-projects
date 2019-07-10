@@ -3,6 +3,8 @@
 #include <irrlicht.h>
 #include <irr/asset/CImageData.h>
 
+#include <iostream>
+
 namespace kosu{
 	using namespace irr;
 
@@ -82,28 +84,36 @@ namespace kosu{
 		
 		core::vector<DefaultTerrainLayout> vertexData;
 		core::vector<int32_t> indexData;
+
+		uint8_t* rawImgData = reinterpret_cast<uint8_t*>(imgData->getData());
 		for(int i = 0; i < imgData->getImageDataSizeInPixels(); ++i){
-			core::vector3d<uint8_t> &vec = reinterpret_cast<core::vector3d<uint8_t>*>(imgData->getData())[i * sizePerPixel];
-			heightData.push_back(((vec.X + vec.Y + vec.Z) / 3) / 255.0f);
+			heightData.push_back(((*rawImgData++, *rawImgData++, *rawImgData++) / 3) / 255.0f);
 		}
 
-		video::IGPUBuffer *buf = driver->createDeviceLocalGPUBufferOnDedMem(heightData.size());
-		driver->updateBufferRangeViaStagingBuffer(buf, 0, heightData.size(), heightData.data());
+		video::IGPUBuffer *buf = driver->createDeviceLocalGPUBufferOnDedMem(heightData.size() * 4);
+		driver->updateBufferRangeViaStagingBuffer(buf, 0, heightData.size() * 4, heightData.data());
 		video::ITextureBufferObject *tbo = driver->addTextureBufferObject(buf, video::ITextureBufferObject::ETBOF_R32F);
 
 		//Generate VertexData
-		for(int x = 0; x < size.X; ++x){
-			for(int y = 0; y < size.Y; ++y){
-				vertexData.push_back({(float)x, 0.f, (float)y, (float)(x % 2)});
+		int height = 0;
+		for(int y = 0; y < size.Y; ++y){
+			for(int x = 0; x < size.X; ++x){
+				vertexData.push_back({(float)x, 0.f, (float)y, (float)(height++)});
 			}
+	
 		}
 
 		//Generate IndexData
 		for(int i = 0; i < imgData->getImageDataSizeInPixels(); ++i){
-			if(i % (size.X - 1) == 0 || i >= (size.X * size.Y) - (size.Y + 1)) continue;
-			indexData.insert(indexData.end(), {i, i + 1, i + 1 + size.X,   
-											   i, i + 1 + size.X, i + size.X});
+			int x = (i % (size.X));
+			
+
+			if(x == 99 || i >= (size.X * size.Y - size.X)) continue;
+			indexData.insert(indexData.end(), {i, i + 1, i + size.X + 1,
+												i, i + size.X + 1, i + size.X });
 		}
+
+
 
 		video::IGPUBuffer* vb = driver->createDeviceLocalGPUBufferOnDedMem(vertexData.size() * sizeof(DefaultTerrainLayout));
 		video::IGPUBuffer* ib = driver->createDeviceLocalGPUBufferOnDedMem(indexData.size() * sizeof(int32_t));

@@ -2,6 +2,8 @@
 #include <irrlicht.h>
 #include "../source/Irrlicht/COpenGLExtensionHandler.h"
 #include "../source/Irrlicht/COpenGLBuffer.h"
+#include "../source/Irrlicht/COpenGLDriver.h"
+
 #include "Application.hpp"
 #include "Geom.hpp"
 #include "Shader.hpp"
@@ -45,6 +47,10 @@ layout(location = 0) out vec4 color;
 layout(binding = 0) uniform sampler2D tex0;
 layout(binding = 1) uniform sampler2D shadowMap;
 
+bool range(float val){
+	return val >= 0.0 && val <= 1.0;
+}
+
 void main(){
 
 	vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
@@ -52,13 +58,14 @@ void main(){
 
 	float closeDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
+		
+	float shadowDepth = texture2D(shadowMap, projCoords.xy).x;
+	float shadow = currentDepth - shadowDepth;
 	
 
-	float shadow = currentDepth > closeDepth ? 1.0 : 0.0;
 
-    color = vec4(shadow, shadow, shadow, 1.0);
+    color = (1.0 - shadow) * texture(tex0, tCoord);
 }
-
 )";
 
 const char* vSSM = R"(
@@ -157,7 +164,7 @@ int main(){
 	cam->setTarget({0,0.5,0});
 	cam->setNearValue(0.1f);
 	cam->setFarValue(100.0f);
-	app.device->getSceneManager()->setActiveCamera(cam);
+	app.device->getSceneManager()->setActiveCamera(app.device->getSceneManager()->addCameraSceneNodeFPS());
 	
 	asset::IAssetLoader::SAssetLoadParams lparams;
 	asset::ICPUTexture* cpuTex = static_cast<asset::ICPUTexture*>(app.device->getAssetManager().getAsset("../../media/wall.jpg", lparams));
@@ -165,8 +172,8 @@ int main(){
 	
 	
 	
-	video::IGPUMeshBuffer *mesh = kosu::quad(app.driver, core::vector3df_SIMD(-0.5, 1, 0), core::vector3df_SIMD(0.5, 0, 0));
-	video::IGPUMeshBuffer *mesh2 = kosu::quad(app.driver, core::vector3df_SIMD(-1, -0.1, 1), core::vector3df_SIMD(1, -0.1, -1));
+	video::IGPUMeshBuffer *mesh = kosu::quad(app.driver, core::vector3df_SIMD(-1, 1, 1), core::vector3df_SIMD(1, 1, -1));
+	video::IGPUMeshBuffer *mesh2 = kosu::quad(app.driver, core::vector3df_SIMD(-3, -0.1, 3), core::vector3df_SIMD(3, -0.1, -3));
 
 	video::SGPUMaterial mat, mat2;
 	
@@ -198,11 +205,22 @@ int main(){
 	auto test = core::dimension2d<uint32_t>(1280, 720);
 	video::ITexture *depth = app.driver->createGPUTexture(video::ITexture::ETT_2D, depthTexSize, 1u, asset::EF_D32_SFLOAT);
 	
+
+
+	{
+		video::STextureSamplingParams params;
+		params.UseMipmaps = 0;
+		params.MaxFilter = params.MinFilter = video::ETFT_LINEAR_NO_MIP;
+		params.TextureWrapU = params.TextureWrapV = video::ETC_CLAMP_TO_EDGE;
+		const_cast<video::COpenGLDriver::SAuxContext*>(reinterpret_cast<video::COpenGLDriver*>(app.driver)->getThreadContext())->setActiveTexture(0, depth, params);
+	}
+
+
 	fbo->attach(video::EFAP_DEPTH_ATTACHMENT, depth);
 	mat.setTexture(1, depth);
-	
-	lightMat = core::concatenateBFollowedByA(core::matrix4SIMD::buildProjectionMatrixPerspectiveFovRH(0.5f * core::PI, (1280.0 / 720.0), 0.1, 100),
-		core::matrix3x4SIMD::buildCameraLookAtMatrixLH(core::vectorSIMDf(-1.0f, 0.75f, -1.0f), core::vectorSIMDf(0.0f, 0.5f, 0.0f), core::vectorSIMDf(0.0f, 1.0f, 0.0f))
+	//core::matrix4SIMD::buildProjectionMatrixPerspectiveFovRH(0.5f * core::PI, (1280.0 / 720.0), 0.1, 100)
+	lightMat = core::concatenateBFollowedByA(core::matrix4SIMD::buildProjectionMatrixOrthoRH(20, 20, 1, 7.5),
+		core::matrix3x4SIMD::buildCameraLookAtMatrixLH(core::vectorSIMDf(-2.0f, 4.0f, -1.0f), core::vectorSIMDf(0.0f, 0.0f, 0.0f), core::vectorSIMDf(0.0f, 1.0f, 0.0f))
 	);
 
 

@@ -27,7 +27,7 @@ namespace kosu{
 
 #include "irr/irrpack.h"
 	struct DefaultTerrainLayout {
-		float v[4];
+		float v[3];
 	} PACK_STRUCT;
 #include "irr/irrunpack.h"
 
@@ -70,6 +70,45 @@ namespace kosu{
 		return mb;
 	}
 
+	video::IGPUMeshBuffer* massupdatetest(video::IVideoDriver* driver,
+		core::vector3df_SIMD tL = core::vector3df_SIMD(-0.5, 0.5, 0.0), core::vector3df_SIMD bR = core::vector3df_SIMD(0.5, -0.5, 0.0)
+	) {
+		DefaultTextureLayout vD[4];
+		vD[0] = DefaultTextureLayout{ {tL.x, tL.y, tL.z}, {255,0} };
+		vD[1] = DefaultTextureLayout{ {bR.x, tL.y, tL.z}, {255,255} };
+		vD[2] = DefaultTextureLayout{ {bR.x, bR.y, bR.z}, {0,255} };
+		vD[3] = DefaultTextureLayout{ {tL.x, bR.y, bR.z}, {0,0} };
+
+		uint16_t iD[] = {
+			0,1,2,	0,2,3
+		};
+
+		video::IGPUBuffer* vb = driver->createDeviceLocalGPUBufferOnDedMem(sizeof(vD));
+		video::IGPUBuffer* ib = driver->createDeviceLocalGPUBufferOnDedMem(sizeof(iD));
+
+		video::IGPUMeshDataFormatDesc* desc = driver->createGPUMeshDataFormatDesc();
+		video::IGPUMeshBuffer* mb = new video::IGPUMeshBuffer;
+		mb->setMeshDataAndFormat(desc);
+		desc->drop();
+
+		driver->updateBufferRangeViaStagingBuffer(vb, 0, sizeof(vD), vD);
+		driver->updateBufferRangeViaStagingBuffer(ib, 0, sizeof(iD), iD);
+
+
+		desc->setVertexAttrBuffer(vb, asset::EVAI_ATTR0, asset::EF_R32G32B32_SFLOAT, sizeof(DefaultTextureLayout), 0);
+		desc->setVertexAttrBuffer(vb, asset::EVAI_ATTR1, asset::EF_R8G8_UNORM, sizeof(DefaultTextureLayout), 12);
+		desc->setIndexBuffer(ib);
+
+		mb->setIndexType(asset::EIT_16BIT);
+		mb->setIndexCount(6);
+
+		vb->drop();
+		ib->drop();
+		mb->grab();
+		return mb;
+	}
+
+
 
 	std::pair<video::IGPUMeshBuffer*, video::ITextureBufferObject*> terrain(video::IVideoDriver *driver, asset::ICPUTexture *tex){
 		asset::CImageData *imgData = tex->getRanges()[0];
@@ -95,10 +134,9 @@ namespace kosu{
 		video::ITextureBufferObject *tbo = driver->addTextureBufferObject(buf, video::ITextureBufferObject::ETBOF_R32F);
 
 		//Generate VertexData
-		int height = 0;
 		for(int y = 0; y < size.Y; ++y){
 			for(int x = 0; x < size.X; ++x){
-				vertexData.push_back({(float)x, 0.f, (float)y, (float)(height++)});
+				vertexData.push_back({(float)x, 0.f, (float)y});
 			}
 	
 		}
@@ -126,8 +164,7 @@ namespace kosu{
 		driver->updateBufferRangeViaStagingBuffer(vb, 0, vertexData.size() * sizeof(DefaultTerrainLayout), vertexData.data());
 		driver->updateBufferRangeViaStagingBuffer(ib, 0, indexData.size() * sizeof(int32_t), indexData.data());
 
-
-		desc->setVertexAttrBuffer(vb, asset::EVAI_ATTR0, asset::EF_R32G32B32A32_SFLOAT, sizeof(DefaultTerrainLayout), 0);
+		desc->setVertexAttrBuffer(vb, asset::EVAI_ATTR0, asset::EF_R32G32B32_SFLOAT, sizeof(DefaultTerrainLayout), 0);
 		desc->setIndexBuffer(ib);
 
 		mb->setIndexType(asset::EIT_32BIT);

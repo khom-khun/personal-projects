@@ -56,8 +56,8 @@ void DefaultCamera::animateNode(scene::IDummyTransformationSceneNode *node, uint
 	strafeDir = strafeDir.crossProduct(camera->getUpVector());
 
 
-	pos += (target * move_.Y * timeDiff * 3);
-	pos += (strafeDir * move_.X * timeDiff * 3);
+	pos += (target * move_.Y * timeDiff * 1);
+	pos += (strafeDir * move_.X * timeDiff * 1);
 	
 	camera->setPosition(pos);
 	camera->setTarget(target + camera->getPosition());
